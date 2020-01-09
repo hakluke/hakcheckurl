@@ -3,6 +3,11 @@ Takes a list of URLs and returns their HTTP response codes
 
 This tool was written to be chained with [hakrawler](https://github.com/hakluke/hakrawler) to easily check the response codes of discovered URLs.
 
+# Installation
+```
+go get github.com/hakluke/hakcheckurl
+```
+
 # Sample Usage
 ```
 hakluke~$ assetfinder google.com | hakrawler -plain | hakcheckurl | grep -v 404
