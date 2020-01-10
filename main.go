@@ -26,9 +26,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if maxFileDescriptors-100 < 0 {
+		log.Fatalf("maxFileDescriptors==%d not enough", maxFileDescriptors)
+	}
 
 	var wg sync.WaitGroup
-	lock := make(chan struct{}, maxFileDescriptors)
+	lock := make(chan struct{}, maxFileDescriptors-100)
 	client := &http.Client{Transport: &http.Transport{
 		TLSClientConfig:     &tls.Config{InsecureSkipVerify: true},
 		Dial:                (&net.Dialer{Timeout: 0, KeepAlive: 0}).Dial,
@@ -45,12 +48,12 @@ func main() {
 			req, err := http.NewRequest("GET", url, nil)
 			req.Header.Set("Connection", "close")
 			if err != nil {
-				fmt.Println(-1, err)
+				fmt.Println(999, err)
 				return
 			}
 			resp, err := client.Do(req)
 			if err != nil {
-				fmt.Println(-1, err, url)
+				fmt.Println(999, err, url)
 				return
 			}
 			resp.Body.Close()
