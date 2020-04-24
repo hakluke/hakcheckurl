@@ -1,69 +1,63 @@
+// Receives lines from stdin, processes them with a user-defined number of threads
+
 package main
 
 import (
-	"bufio"
-	"crypto/tls"
-	"fmt"
-	"log"
-	"net"
-	"net/http"
-	"os"
-	"sync"
-	"syscall"
-	"time"
+    "bufio"
+    "flag"
+    "fmt"
+    "sync"
+    "os"
+    "net/http"
+    "net"
+    "time"
+    "crypto/tls"
 )
 
-func ulimit() (uint64, error) {
-	var rLimit syscall.Rlimit
-	err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &rLimit)
-	if err != nil {
-		return 0, err
-	}
-	return rLimit.Cur, nil
-}
 
 func main() {
-	maxFileDescriptors, err := ulimit()
-	if err != nil {
-		log.Fatal(err)
-	}
-	if maxFileDescriptors-100 < 0 {
-		log.Fatalf("maxFileDescriptors==%d is not enough", maxFileDescriptors)
-	}
+        concurrencyPtr := flag.Int("t", 8, "Number of threads to utilise. Default is 8.")
+        flag.Parse()
+        client := &http.Client{Transport: &http.Transport{
+                TLSClientConfig:     &tls.Config{InsecureSkipVerify: true},
+                Dial:                (&net.Dialer{Timeout: 0, KeepAlive: 0}).Dial,
+                TLSHandshakeTimeout: 5 * time.Second,
+        }}
 
-	var wg sync.WaitGroup
-	lock := make(chan struct{}, maxFileDescriptors-100)
-	client := &http.Client{Transport: &http.Transport{
-		TLSClientConfig:     &tls.Config{InsecureSkipVerify: true},
-		Dial:                (&net.Dialer{Timeout: 0, KeepAlive: 0}).Dial,
-		TLSHandshakeTimeout: 5 * time.Second,
-	}}
+        numWorkers := *concurrencyPtr
+        work := make(chan string)
+        go func() {
+            s := bufio.NewScanner(os.Stdin)
+            for s.Scan() {
+                work <- s.Text()
+            }
+            close(work)
+        }()
 
-	scanner := bufio.NewScanner(os.Stdin)
-	for scanner.Scan() {
-		wg.Add(1)
-		lock <- struct{}{}
-		go func(url string) {
-			defer wg.Done()
-			defer func() { <-lock }()
+        wg := &sync.WaitGroup{}
 
-			req, err := http.NewRequest("GET", url, nil)
-			req.Header.Set("Connection", "close")
-			if err != nil {
-				fmt.Println(999, err)
-				return
-			}
-			resp, err := client.Do(req)
-			if err != nil {
-				fmt.Println(999, err, url)
-				return
-			}
-			resp.Body.Close()
-			fmt.Println(resp.StatusCode, url)
-		}(scanner.Text())
-	}
-	if err := scanner.Err(); err != nil {
-		fmt.Println(err)
-	}
-	wg.Wait()
+        for i := 0; i < numWorkers; i++ {
+            wg.Add(1)
+            go doWork(work, client, wg)
+        }
+        wg.Wait()
+}
+
+func doWork(work chan string, client *http.Client, wg *sync.WaitGroup) {
+    defer wg.Done()
+    for url := range work {
+        req, err := http.NewRequest("GET", url, nil)
+        req.Header.Set("Connection", "close")
+        if err != nil {
+                fmt.Println(999, err)
+                return
+        }
+        resp, err := client.Do(req)
+        if err != nil {
+                fmt.Println(999, err, url)
+                return
+        }
+        resp.Body.Close()
+        fmt.Println(resp.StatusCode, url)
+    }
 }

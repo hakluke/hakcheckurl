@@ -8,6 +8,9 @@ This tool was written to be chained with [hakrawler](https://github.com/hakluke/
 go get github.com/hakluke/hakcheckurl
 ```
 
+# Usage
+- `-t 100` use 100 threads
+
 # Sample Usage
 ```
 hakluke~$ assetfinder google.com | hakrawler -plain | hakcheckurl | grep -v 404
