@@ -47,15 +47,16 @@ func doWork(work chan string, client *http.Client, wg *sync.WaitGroup) {
     defer wg.Done()
     for url := range work {
         req, err := http.NewRequest("GET", url, nil)
-        req.Header.Set("Connection", "close")
         if err != nil {
                 fmt.Println(999, err)
-                return
+                continue
         }
+        req.Header.Set("Connection", "close")
+
         resp, err := client.Do(req)
         if err != nil {
                 fmt.Println(999, err, url)
-                return
+                continue
         }
         resp.Body.Close()
         fmt.Println(resp.StatusCode, url)
