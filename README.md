@@ -5,7 +5,7 @@ This tool was written to be chained with [hakrawler](https://github.com/hakluke/
 
 # Installation
 ```
-go get github.com/hakluke/hakcheckurl
+go install github.com/hakluke/hakcheckurl@latest
 ```
 
 # Usage
