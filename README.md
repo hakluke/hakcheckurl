@@ -1,5 +1,13 @@
 # hakcheckurl
-Takes a list of URLs and returns their HTTP response codes
+
+Takes a list of URLs and returns their HTTP response codes. This tool is perfect for quickly determining the status of multiple web pages, especially when combined with other tools.
+
+This tool was written to be chained with [hakrawler](https://github.com/hakluke/hakrawler) to easily check the response codes of discovered URLs.
+
+## Features
+- **Concurrent Processing**: Utilize multiple threads to speed up the checking process.
+- **Configurable Timeout**: Define how long each request should wait before timing out.
+- **Retry Mechanism**: Automatically retry failed requests to handle temporary network glitches.
 
 This tool was written to be chained with [hakrawler](https://github.com/hakluke/hakrawler) to easily check the response codes of discovered URLs.
 
@@ -9,8 +17,12 @@ go install github.com/hakluke/hakcheckurl@latest
 ```
 
 # Usage
-- `-t 100` use 100 threads
-
+```
+-t : Specify the number of threads to use.
+-retry : Define how many times to retry failed requests.
+-timeout : Set a timeout for each request.
+-retry-sleep : Set the duration to sleep between retries.
+```
 # Sample Usage
 ```
 hakluke~$ assetfinder google.com | hakrawler -plain | hakcheckurl | grep -v 404
